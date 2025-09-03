@@ -17,30 +17,42 @@
 
   <script>
     async function generateKey() {
+      // random key dạng DUC_123xxx
       const rand = Math.random().toString(36).substring(2, 8);
-      const key = "DUC_" + rand;
+      const key = "DUC_123" + rand;
 
-      const repo = "DucDarling/bio";      // repo thật
-      const path = "key_thuong.json";     // file chứa keys
+      // repo + file json
+      const repo = "DucDarling/bio";     // đổi thành repo thật của ông
+      const path = "key_thuong.json";    // file chứa keys
       const apiUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
 
-      // ⚠️ Thay token này bằng token ông mới tạo (giữ kín, không share công khai)
-      const token = "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";
+      // ⚠️ Thay token này bằng token thật (PAT có quyền Contents: Read+Write)
+      const token = "ghp_xxx_replace_with_your_token";
 
       try {
-        // Lấy file key_thuong.json hiện tại
+        // lấy file hiện tại
         const res = await fetch(apiUrl, {
           headers: { "Authorization": "token " + token }
         });
-        const data = await res.json();
-        const sha = data.sha;
-        let content = atob(data.content.replace(/\n/g, ""));
-        let json = JSON.parse(content);
+        if (!res.ok && res.status !== 404) {
+          throw new Error("Không lấy được file key_thuong.json từ GitHub");
+        }
+        let json = { keys: [] };
+        let sha = null;
 
-        // Thêm key mới
+        if (res.status === 200) {
+          const data = await res.json();
+          sha = data.sha;
+          if (data.content) {
+            let content = atob(data.content.replace(/\n/g, ""));
+            json = JSON.parse(content);
+          }
+        }
+
+        // thêm key mới
         json.keys.push(key);
 
-        // Ghi lại file
+        // commit lại file
         const update = await fetch(apiUrl, {
           method: "PUT",
           headers: {
