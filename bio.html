@@ -13,29 +13,31 @@
   <div class="card">
     <h2>Chào mừng bạn!</h2>
     <p>Bạn đã vượt link thành công 🎉</p>
-    <p id="status">Đang tạo key...</p>
+    <p id="status">⏳ Đang xử lý...</p>
     <p id="key" style="font-size:1.2em; font-weight:bold;"></p>
   </div>
+
+  <!-- Load config riêng -->
+  <script src="config.js"></script>
 
   <script>
     (async () => {
       const params = new URLSearchParams(location.search);
       const sid = params.get("sid");
       if (!sid) {
-        document.getElementById("status").textContent = "Thiếu tham số sid!";
+        document.getElementById("status").textContent = "❌ Thiếu tham số sid!";
         return;
       }
 
       const newKey = "DUC_" + sid;
       document.getElementById("key").textContent = "🔑 Key của bạn: " + newKey;
 
-      const GIST_ID = "8d901e2dc4daf9f58b0e230cbcd05105";
-      const GIST_FILE = "key.json";
+      const { GIST_ID, GIST_FILE, GITHUB_TOKEN } = window.APP_CONFIG;
       const RAW_URL = `https://gist.githubusercontent.com/DucDarling/${GIST_ID}/raw/${GIST_FILE}`;
       const API_URL = `https://api.github.com/gists/${GIST_ID}`;
-      const GITHUB_TOKEN = "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"; // Thay token ở đây (account DucDarling)
 
       try {
+        // Lấy key.json hiện tại (cache-buster)
         const resp = await fetch(RAW_URL + "?t=" + Date.now(), { cache: "no-store" });
         let keys = [];
         try { keys = await resp.json(); } catch {}
@@ -50,17 +52,19 @@
               "Accept": "application/vnd.github.v3+json",
               "Content-Type": "application/json"
             },
-            body: JSON.stringify({ files: { [GIST_FILE]: { content: JSON.stringify(keys, null, 2) } } })
+            body: JSON.stringify({
+              files: { [GIST_FILE]: { content: JSON.stringify(keys, null, 2) } }
+            })
           });
 
           if (!patchRes.ok) {
             const txt = await patchRes.text();
-            document.getElementById("status").textContent = `❌ Lỗi ghi key: ${txt}`;
+            document.getElementById("status").textContent = "❌ Lỗi ghi key: " + txt;
             return;
           }
         }
 
-        document.getElementById("status").textContent = "Key đã lưu vào hệ thống — Hãy copy và dán vào tool.";
+        document.getElementById("status").textContent = "✅ Key đã lưu vào hệ thống. Hãy copy key ở trên và dán vào tool.";
       } catch (err) {
         document.getElementById("status").textContent = "❌ Lỗi kết nối gist: " + err.message;
       }
