@@ -1,0 +1,30 @@
+name: Generate Key
+
+on:
+  workflow_dispatch:   # cho phép gọi thủ công qua API
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Generate new key
+        run: |
+          KEY="DUC_$(cat /dev/urandom | tr -dc 'A-Z0-9' | head -c 8)"
+          echo "NEW_KEY=$KEY" >> $GITHUB_ENV
+
+      - name: Update key.json
+        run: |
+          jq ". + [\"$NEW_KEY\"]" key.json > tmp.json && mv tmp.json key.json
+          echo "Key mới: $NEW_KEY"
+
+      - name: Commit & Push
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "Add new key ${{ env.NEW_KEY }}"
+          file_pattern: key.json
+
+      - name: Output key
+        run: echo "::set-output name=key::${NEW_KEY}"
