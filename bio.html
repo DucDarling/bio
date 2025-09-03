@@ -2,60 +2,44 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Nhận Key</title>
+  <title>Bio Page</title>
 </head>
 <body>
-  <h2>Bạn đã vượt link thành công 🎉</h2>
-  <div id="result">Đang tạo key...</div>
+  <h2>Chào mừng bạn!</h2>
+  <p>Bạn đã vượt link thành công 🎉</p>
+  <div id="key"></div>
 
   <script>
-    const GIST_ID = "bcacd8810c48a5788e0bba0cdb428aac"; // Gist ID của bạn
-    const GITHUB_TOKEN = "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"; // Token bạn đưa
+    async function main() {
+      const params = new URLSearchParams(window.location.search);
+      const sid = params.get("sid");
 
-    function generateKey() {
-      let random = Math.random().toString(36).substring(2, 10).toUpperCase();
-      return "DUC_" + random;
-    }
+      // Tạo key dạng DUC_sid
+      const newKey = "DUC_" + sid;
 
-    async function createKey() {
-      let newKey = generateKey();
+      // Hiển thị key
+      document.getElementById("key").innerText = "🔑 Key của bạn: " + newKey;
 
+      // Push key vào Gist
+      const GIST_ID = "bcacd8810c48a5788e0bba0cdb428aac";
+      const GIST_FILE = "key.json";
+      const GITHUB_TOKEN = "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"; // ⚠️ không để token public, chỉ dùng khi bạn test local thôi
+
+      // Lấy key.json
+      const resp = await fetch(`https://gist.githubusercontent.com/ducdzvcl123/${GIST_ID}/raw/${GIST_FILE}`);
+      let data = [];
       try {
-        // Lấy nội dung key.json hiện tại
-        let res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-          headers: { "Authorization": "token " + GITHUB_TOKEN }
-        });
-        let gist = await res.json();
-        let content = JSON.parse(gist.files["key.json"].content);
+        data = await resp.json();
+      } catch (e) {}
 
-        // Thêm key mới
-        content.push(newKey);
+      if (!data.includes(newKey)) {
+        data.push(newKey);
 
-        // Update gist
-        await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-          method: "PATCH",
-          headers: {
-            "Authorization": "token " + GITHUB_TOKEN,
-            "Accept": "application/vnd.github.v3+json"
-          },
-          body: JSON.stringify({
-            files: {
-              "key.json": {
-                content: JSON.stringify(content, null, 2)
-              }
-            }
-          })
-        });
-
-        document.getElementById("result").innerText =
-          "Key của bạn: " + newKey + "\nHãy copy và dán vào tool.";
-      } catch (e) {
-        document.getElementById("result").innerText = "❌ Lỗi khi tạo key!";
-        console.error(e);
+        // 🔥 Nếu chạy local, bạn có thể gửi fetch PATCH tới GitHub API với token
+        // Còn nếu host public, bạn chỉ nên để Python tool update thôi, không để token lộ ra.
       }
     }
-
-    createKey();
+    main();
   </script>
 </body>
 </html>
