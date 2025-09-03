@@ -4,80 +4,70 @@
   <meta charset="UTF-8">
   <title>DUC DZ - Key Generator</title>
   <style>
-    body { font-family: monospace; text-align:center; margin-top:50px; background:#111; color:#0f0; }
+    body { background:#111; color:#0f0; font-family: monospace; text-align:center; padding:50px; }
     h1 { color:#ff0; }
-    .box { border:1px solid #0f0; padding:20px; margin:auto; width:400px; border-radius:10px; }
-    #key { font-size: 18px; color: #0ff; margin-top: 10px; }
+    #keyBox { font-size:20px; margin-top:20px; color:#0ff; }
+    #status { margin-top:15px; }
   </style>
 </head>
 <body>
-  <h1>🔑 DUC DZ - Key Generator 🔑</h1>
-  <div class="box">
-    <p id="status">Đang tạo key mới...</p>
-    <p id="key"></p>
-  </div>
+  <h1>🔑 DUC DZ - Key Generator</h1>
+  <p id="status">Đang tạo key mới...</p>
+  <div id="keyBox"></div>
 
   <script>
+    const repo = "DucDarling/bio";   // tên repo public
+    const path = "key_thuong.json";
+    const apiUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
+    const token = "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"; // token GitHub có quyền ghi repo
+
     async function generateKey() {
-      // random key dạng DUC_123xxx
-      const rand = Math.random().toString(36).substring(2, 8);
-      const key = "DUC_123" + rand;
-
-      const repo = "DucDarling/bio";     // repo thật
-      const path = "key_thuong.json";    // file chứa keys
-      const apiUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
-
-      // ⚠️ Dán token GitHub vào đây (PAT có Contents: Read+Write)
-      const token = "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";
+      const newKey = "DUC_" + Math.random().toString(36).substring(2, 10).toUpperCase();
 
       try {
-        // lấy file key_thuong.json
+        // lấy file key_thuong.json hiện tại
         const res = await fetch(apiUrl, {
-          headers: { "Authorization": "token " + token }
+          headers: { Authorization: `Bearer ${token}` }
         });
 
-        let json = { keys: [] };
-        let sha = null;
-
-        if (res.status === 200) {
-          const data = await res.json();
-          sha = data.sha;
-          if (data.content) {
-            let content = atob(data.content.replace(/\n/g, ""));
-            json = JSON.parse(content);
-          }
-        } else if (res.status === 404) {
-          json = { keys: [] };
-          sha = null;
-        } else {
-          throw new Error("GitHub API lỗi (status " + res.status + ")");
+        if (!res.ok) {
+          document.getElementById("status").innerText = "❌ Lỗi GET: " + res.status;
+          return;
         }
 
-        // thêm key mới
-        json.keys.push(key);
+        const data = await res.json();
+        const content = JSON.parse(atob(data.content));
+        const sha = data.sha;
 
-        // ghi lại file trên GitHub
-        const update = await fetch(apiUrl, {
+        // thêm key mới
+        content.keys.push(newKey);
+
+        // encode sang base64
+        const updatedContent = btoa(JSON.stringify(content, null, 2));
+
+        // gửi PUT request update file trên GitHub
+        const updateRes = await fetch(apiUrl, {
           method: "PUT",
           headers: {
-            "Authorization": "token " + token,
-            "Content-Type": "application/json"
+            Authorization: `Bearer ${token}`,
+            Accept: "application/vnd.github.v3+json"
           },
           body: JSON.stringify({
-            message: "Add new key",
-            content: btoa(JSON.stringify(json, null, 2)),
+            message: `Add new key: ${newKey}`,
+            content: updatedContent,
             sha: sha
           })
         });
 
-        if (update.ok) {
-          document.getElementById("status").innerText = "✅ Key của bạn:";
-          document.getElementById("key").innerText = key;
-        } else {
-          document.getElementById("status").innerText = "❌ Lỗi khi ghi key lên server!";
+        if (!updateRes.ok) {
+          document.getElementById("status").innerText = "❌ Lỗi PUT: " + updateRes.status;
+          return;
         }
-      } catch (e) {
-        document.getElementById("status").innerText = "❌ Lỗi: " + e;
+
+        document.getElementById("status").innerText = "✅ Key đã được tạo thành công!";
+        document.getElementById("keyBox").innerText = newKey;
+      } catch (err) {
+        document.getElementById("status").innerText = "❌ Lỗi: " + err.message;
       }
     }
 
