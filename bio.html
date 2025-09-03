@@ -4,50 +4,20 @@
   <meta charset="UTF-8">
   <title>Bio Page</title>
 </head>
-<body>
+<body style="font-family: Arial; background: #111; color: white; text-align:center; padding:50px;">
   <h2>Chào mừng bạn!</h2>
   <p>Bạn đã vượt link thành công 🎉</p>
-  <p>🔑 Key của bạn: <span id="key"></span></p>
+  <p id="key"></p>
 
   <script>
-  const BIN_ID = "68b7c0ee43b1c97be9351e19";
-  const MASTER_KEY = "$2a$10$iQNsvLijA.NY1mO1DGzLNuXQk9zc1g3A5IO1NUngCUJFaghZIdbye";
+    const urlParams = new URLSearchParams(window.location.search);
+    const sid = urlParams.get("sid");
 
-  function generateKey() {
-      let rand = Math.random().toString(36).substring(2, 8).toUpperCase();
-      return "DUC_" + rand;
-  }
-
-  async function saveKey(newKey) {
-      let url = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
-      
-      // Lấy dữ liệu cũ
-      let res = await fetch(url + "/latest", {
-          headers: { "X-Master-Key": MASTER_KEY }
-      });
-      let data = await res.json();
-      let keys = data.record.keys || [];
-
-      // Thêm key mới
-      keys.push(newKey);
-
-      // Ghi lại
-      await fetch(url, {
-          method: "PUT",
-          headers: {
-              "Content-Type": "application/json",
-              "X-Master-Key": MASTER_KEY
-          },
-          body: JSON.stringify({ keys })
-      });
-  }
-
-  async function main() {
-      let key = generateKey();
-      document.getElementById("key").innerText = key;
-      await saveKey(key);
-  }
-  main();
+    if (sid) {
+      document.getElementById("key").innerHTML = "🔑 Key của bạn: DUC_" + sid;
+    } else {
+      document.getElementById("key").innerHTML = "❌ Không tìm thấy key!";
+    }
   </script>
 </body>
 </html>
