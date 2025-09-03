@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Nhận Key</title>
+</head>
+<body>
+  <h2>Bạn đã vượt link thành công 🎉</h2>
+  <div id="result">Đang tạo key...</div>
+
+  <script>
+    const GIST_ID = "bcacd8810c48a5788e0bba0cdb428aac"; // Gist ID của bạn
+    const GITHUB_TOKEN = "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"; // Token bạn đưa
+
+    function generateKey() {
+      let random = Math.random().toString(36).substring(2, 10).toUpperCase();
+      return "DUC_" + random;
+    }
+
+    async function createKey() {
+      let newKey = generateKey();
+
+      try {
+        // Lấy nội dung key.json hiện tại
+        let res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+          headers: { "Authorization": "token " + GITHUB_TOKEN }
+        });
+        let gist = await res.json();
+        let content = JSON.parse(gist.files["key.json"].content);
+
+        // Thêm key mới
+        content.push(newKey);
+
+        // Update gist
+        await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+          method: "PATCH",
+          headers: {
+            "Authorization": "token " + GITHUB_TOKEN,
+            "Accept": "application/vnd.github.v3+json"
+          },
+          body: JSON.stringify({
+            files: {
+              "key.json": {
+                content: JSON.stringify(content, null, 2)
+              }
+            }
+          })
+        });
+
+        document.getElementById("result").innerText =
+          "Key của bạn: " + newKey + "\nHãy copy và dán vào tool.";
+      } catch (e) {
+        document.getElementById("result").innerText = "❌ Lỗi khi tạo key!";
+        console.error(e);
+      }
+    }
+
+    createKey();
+  </script>
+</body>
+</html>
