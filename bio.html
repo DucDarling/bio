@@ -16,16 +16,16 @@
   <div id="keyBox"></div>
 
   <script>
-    const repo = "DucDarling/bio";   // tên repo public
+    const repo = "DucDarling/bio";   // repo public
     const path = "key_thuong.json";
     const apiUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
-    const token = "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"; // token GitHub có quyền ghi repo
+    const token = "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";
 
     async function generateKey() {
       const newKey = "DUC_" + Math.random().toString(36).substring(2, 10).toUpperCase();
 
       try {
-        // lấy file key_thuong.json hiện tại
+        // Lấy file key_thuong.json hiện tại
         const res = await fetch(apiUrl, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -36,16 +36,24 @@
         }
 
         const data = await res.json();
-        const content = JSON.parse(atob(data.content));
-        const sha = data.sha;
+        let content = {};
+        let sha = null;
 
-        // thêm key mới
+        try {
+          content = JSON.parse(atob(data.content));
+          sha = data.sha;
+        } catch (e) {
+          content = { keys: [] };
+        }
+
+        // Thêm key mới
+        if (!content.keys) content.keys = [];
         content.keys.push(newKey);
 
-        // encode sang base64
+        // Encode lại sang base64
         const updatedContent = btoa(JSON.stringify(content, null, 2));
 
-        // gửi PUT request update file trên GitHub
+        // Update file trên GitHub
         const updateRes = await fetch(apiUrl, {
           method: "PUT",
           headers: {
