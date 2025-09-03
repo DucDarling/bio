@@ -13,30 +13,45 @@
     async function main() {
       const params = new URLSearchParams(window.location.search);
       const sid = params.get("sid");
+      if (!sid) return;
 
       // Tạo key dạng DUC_sid
       const newKey = "DUC_" + sid;
-
-      // Hiển thị key
       document.getElementById("key").innerText = "🔑 Key của bạn: " + newKey;
 
-      // Push key vào Gist
+      // ==== CONFIG ====
       const GIST_ID = "bcacd8810c48a5788e0bba0cdb428aac";
       const GIST_FILE = "key.json";
-      const GITHUB_TOKEN = "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"; // ⚠️ không để token public, chỉ dùng khi bạn test local thôi
+      const GITHUB_TOKEN = "ghp_xxx"; // ⚠️ token thật của bạn
 
-      // Lấy key.json
+      // Lấy key.json hiện tại
       const resp = await fetch(`https://gist.githubusercontent.com/ducdzvcl123/${GIST_ID}/raw/${GIST_FILE}`);
       let data = [];
       try {
         data = await resp.json();
-      } catch (e) {}
+      } catch (e) {
+        console.log("Chưa có key.json hoặc lỗi parse JSON");
+      }
 
+      // Nếu chưa có thì thêm key
       if (!data.includes(newKey)) {
         data.push(newKey);
 
-        // 🔥 Nếu chạy local, bạn có thể gửi fetch PATCH tới GitHub API với token
-        // Còn nếu host public, bạn chỉ nên để Python tool update thôi, không để token lộ ra.
+        // Cập nhật lên Gist qua API
+        await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+          method: "PATCH",
+          headers: {
+            "Authorization": "token " + GITHUB_TOKEN,
+            "Accept": "application/vnd.github.v3+json"
+          },
+          body: JSON.stringify({
+            files: {
+              [GIST_FILE]: {
+                content: JSON.stringify(data, null, 2)
+              }
+            }
+          })
+        });
       }
     }
     main();
