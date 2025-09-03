@@ -7,12 +7,14 @@
     body { font-family: monospace; text-align:center; margin-top:50px; background:#111; color:#0f0; }
     h1 { color:#ff0; }
     .box { border:1px solid #0f0; padding:20px; margin:auto; width:400px; border-radius:10px; }
+    #key { font-size: 18px; color: #0ff; margin-top: 10px; }
   </style>
 </head>
 <body>
   <h1>🔑 DUC DZ - Key Generator 🔑</h1>
   <div class="box">
     <p id="status">Đang tạo key mới...</p>
+    <p id="key"></p>
   </div>
 
   <script>
@@ -21,22 +23,19 @@
       const rand = Math.random().toString(36).substring(2, 8);
       const key = "DUC_123" + rand;
 
-      // repo + file json
-      const repo = "DucDarling/bio";     // đổi thành repo thật của ông
+      const repo = "DucDarling/bio";     // repo thật
       const path = "key_thuong.json";    // file chứa keys
       const apiUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
 
-      // ⚠️ Thay token này bằng token thật (PAT có quyền Contents: Read+Write)
+      // ⚠️ Dán token GitHub vào đây (PAT có Contents: Read+Write)
       const token = "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";
 
       try {
-        // lấy file hiện tại
+        // lấy file key_thuong.json
         const res = await fetch(apiUrl, {
           headers: { "Authorization": "token " + token }
         });
-        if (!res.ok && res.status !== 404) {
-          throw new Error("Không lấy được file key_thuong.json từ GitHub");
-        }
+
         let json = { keys: [] };
         let sha = null;
 
@@ -47,12 +46,17 @@
             let content = atob(data.content.replace(/\n/g, ""));
             json = JSON.parse(content);
           }
+        } else if (res.status === 404) {
+          json = { keys: [] };
+          sha = null;
+        } else {
+          throw new Error("GitHub API lỗi (status " + res.status + ")");
         }
 
         // thêm key mới
         json.keys.push(key);
 
-        // commit lại file
+        // ghi lại file trên GitHub
         const update = await fetch(apiUrl, {
           method: "PUT",
           headers: {
@@ -67,7 +71,8 @@
         });
 
         if (update.ok) {
-          document.getElementById("status").innerText = "✅ Key của bạn: " + key;
+          document.getElementById("status").innerText = "✅ Key của bạn:";
+          document.getElementById("key").innerText = key;
         } else {
           document.getElementById("status").innerText = "❌ Lỗi khi ghi key lên server!";
         }
