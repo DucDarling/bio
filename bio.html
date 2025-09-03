@@ -34,7 +34,7 @@
         });
         const data = await res.json();
         const sha = data.sha;
-        let content = atob(data.content);
+        let content = atob(data.content.replace(/\n/g, ""));
         let json = JSON.parse(content);
 
         // Thêm key mới
