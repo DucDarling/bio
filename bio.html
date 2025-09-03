@@ -18,14 +18,14 @@
   <script>
     async function generateKey() {
       const rand = Math.random().toString(36).substring(2, 8);
-      const key = "DUC_123" + rand;
+      const key = "DUC_" + rand;
 
       const repo = "DucDarling/bio";      // repo thật
       const path = "key_thuong.json";     // file chứa keys
       const apiUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
 
       // ⚠️ Thay token này bằng token ông mới tạo (giữ kín, không share công khai)
-      const token = "ghp_xxx_replace_with_your_token";
+      const token = "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";
 
       try {
         // Lấy file key_thuong.json hiện tại
