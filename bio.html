@@ -1,74 +1,53 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Bio Page</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body { font-family: Arial, sans-serif; background:#0b0e14; color:#fff; padding:24px; }
-    .card { background:#121826; padding:20px; border-radius:16px; max-width:600px; margin:auto; }
-  </style>
 </head>
 <body>
-  <div class="card">
-    <h2>Chào mừng bạn!</h2>
-    <p>Bạn đã vượt link thành công 🎉</p>
-    <p id="status">⏳ Đang xử lý...</p>
-    <p id="key" style="font-size:1.2em; font-weight:bold;"></p>
-  </div>
-
-  <!-- Load config riêng -->
-  <script src="config.js"></script>
+  <h2>Chào mừng bạn!</h2>
+  <p>Bạn đã vượt link thành công 🎉</p>
+  <p>🔑 Key của bạn: <span id="key"></span></p>
 
   <script>
-    (async () => {
-      const params = new URLSearchParams(location.search);
-      const sid = params.get("sid");
-      if (!sid) {
-        document.getElementById("status").textContent = "❌ Thiếu tham số sid!";
-        return;
-      }
+  const BIN_ID = "68b7c0ee43b1c97be9351e19";
+  const MASTER_KEY = "$2a$10$iQNsvLijA.NY1mO1DGzLNuXQk9zc1g3A5IO1NUngCUJFaghZIdbye";
 
-      const newKey = "DUC_" + sid;
-      document.getElementById("key").textContent = "🔑 Key của bạn: " + newKey;
+  function generateKey() {
+      let rand = Math.random().toString(36).substring(2, 8).toUpperCase();
+      return "DUC_" + rand;
+  }
 
-      const { GIST_ID, GIST_FILE, GITHUB_TOKEN } = window.APP_CONFIG;
-      const RAW_URL = `https://gist.githubusercontent.com/DucDarling/${GIST_ID}/raw/${GIST_FILE}`;
-      const API_URL = `https://api.github.com/gists/${GIST_ID}`;
+  async function saveKey(newKey) {
+      let url = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+      
+      // Lấy dữ liệu cũ
+      let res = await fetch(url + "/latest", {
+          headers: { "X-Master-Key": MASTER_KEY }
+      });
+      let data = await res.json();
+      let keys = data.record.keys || [];
 
-      try {
-        // Lấy key.json hiện tại (cache-buster)
-        const resp = await fetch(RAW_URL + "?t=" + Date.now(), { cache: "no-store" });
-        let keys = [];
-        try { keys = await resp.json(); } catch {}
+      // Thêm key mới
+      keys.push(newKey);
 
-        if (!keys.includes(newKey)) {
-          keys.push(newKey);
+      // Ghi lại
+      await fetch(url, {
+          method: "PUT",
+          headers: {
+              "Content-Type": "application/json",
+              "X-Master-Key": MASTER_KEY
+          },
+          body: JSON.stringify({ keys })
+      });
+  }
 
-          const patchRes = await fetch(API_URL, {
-            method: "PATCH",
-            headers: {
-              "Authorization": "token " + GITHUB_TOKEN,
-              "Accept": "application/vnd.github.v3+json",
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              files: { [GIST_FILE]: { content: JSON.stringify(keys, null, 2) } }
-            })
-          });
-
-          if (!patchRes.ok) {
-            const txt = await patchRes.text();
-            document.getElementById("status").textContent = "❌ Lỗi ghi key: " + txt;
-            return;
-          }
-        }
-
-        document.getElementById("status").textContent = "✅ Key đã lưu vào hệ thống. Hãy copy key ở trên và dán vào tool.";
-      } catch (err) {
-        document.getElementById("status").textContent = "❌ Lỗi kết nối gist: " + err.message;
-      }
-    })();
+  async function main() {
+      let key = generateKey();
+      document.getElementById("key").innerText = key;
+      await saveKey(key);
+  }
+  main();
   </script>
 </body>
 </html>
