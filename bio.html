@@ -3,20 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <title>Bio Page</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: white;
+      text-align: center;
+      padding: 50px;
+    }
+    h2 { margin-bottom: 10px; }
+    .key-box {
+      display: inline-block;
+      margin-top: 15px;
+      padding: 10px 20px;
+      background: #222;
+      border: 2px solid #00ff99;
+      border-radius: 8px;
+      font-size: 18px;
+      cursor: pointer;
+      user-select: none;
+      transition: 0.2s;
+    }
+    .key-box:hover {
+      background: #333;
+    }
+    .copied {
+      color: #00ff99;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+  </style>
 </head>
-<body style="font-family: Arial; background: #111; color: white; text-align:center; padding:50px;">
+<body>
   <h2>Chào mừng bạn!</h2>
   <p>Bạn đã vượt link thành công 🎉</p>
-  <p id="key"></p>
+  <div id="keyBox" class="key-box">🔑 Key của bạn: ...</div>
+  <div id="copiedMsg" class="copied" style="display:none;">Đã copy key!</div>
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
     const sid = urlParams.get("sid");
+    const key = sid ? "DUC_" + sid : null;
 
-    if (sid) {
-      document.getElementById("key").innerHTML = "🔑 Key của bạn: DUC_" + sid;
+    const keyBox = document.getElementById("keyBox");
+    const copiedMsg = document.getElementById("copiedMsg");
+
+    if (key) {
+      keyBox.textContent = "🔑 Key của bạn: " + key;
+      keyBox.addEventListener("click", () => {
+        navigator.clipboard.writeText(key).then(() => {
+          copiedMsg.style.display = "block";
+          setTimeout(() => copiedMsg.style.display = "none", 1500);
+        });
+      });
     } else {
-      document.getElementById("key").innerHTML = "❌ Không tìm thấy key!";
+      keyBox.textContent = "❌ Không tìm thấy key!";
     }
   </script>
 </body>
