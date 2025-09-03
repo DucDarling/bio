@@ -1,93 +1,70 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DucDz Bio</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            color: #333;
-        }
-        .container {
-            text-align: center;
-            background: white;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            max-width: 400px;
-            width: 100%;
-        }
-        h1 {
-            font-size: 60px; /* Kích thước to cho "DucDz" */
-            color: #ff4500; /* Màu cam nổi bật, bạn có thể thay đổi */
-            margin-bottom: 20px;
-        }
-        .key-box {
-            margin-top: 20px;
-        }
-        input#key {
-            width: 100%;
-            padding: 10px;
-            font-size: 18px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            text-align: center;
-            margin-bottom: 10px;
-        }
-        button {
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>DUC DZ - Key Generator</title>
+  <style>
+    body { font-family: monospace; text-align:center; margin-top:50px; background:#111; color:#0f0; }
+    h1 { color:#ff0; }
+    .box { border:1px solid #0f0; padding:20px; margin:auto; width:400px; border-radius:10px; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>DucDz</h1>
-        <div class="key-box">
-            <label for="key">Your Key:</label>
-            <input type="text" id="key" readonly placeholder="No key available">
-            <button onclick="copyKey()">Copy Key</button>
-        </div>
-    </div>
+  <h1>🔑 DUC DZ - Key Generator 🔑</h1>
+  <div class="box">
+    <p id="status">Đang tạo key mới...</p>
+  </div>
 
-    <script>
-        // Lấy query parameter từ URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const keyValue = urlParams.get('key');
+  <script>
+    async function generateKey() {
+      const rand = Math.random().toString(36).substring(2, 8);
+      const key = "DUC_123" + rand;
 
-        // Nếu có key và không rỗng, hiển thị nó; ngược lại để trống
-        if (keyValue && keyValue.trim() !== '') {
-            document.getElementById('key').value = keyValue;
+      const repo = "DucDarling/bio";      // repo thật
+      const path = "key_thuong.json";     // file chứa keys
+      const apiUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
+
+      // ⚠️ Thay token này bằng token ông mới tạo (giữ kín, không share công khai)
+      const token = "ghp_xxx_replace_with_your_token";
+
+      try {
+        // Lấy file key_thuong.json hiện tại
+        const res = await fetch(apiUrl, {
+          headers: { "Authorization": "token " + token }
+        });
+        const data = await res.json();
+        const sha = data.sha;
+        let content = atob(data.content);
+        let json = JSON.parse(content);
+
+        // Thêm key mới
+        json.keys.push(key);
+
+        // Ghi lại file
+        const update = await fetch(apiUrl, {
+          method: "PUT",
+          headers: {
+            "Authorization": "token " + token,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            message: "Add new key",
+            content: btoa(JSON.stringify(json, null, 2)),
+            sha: sha
+          })
+        });
+
+        if (update.ok) {
+          document.getElementById("status").innerText = "✅ Key của bạn: " + key;
         } else {
-            document.getElementById('key').value = ''; // Ô trống nếu không có key
-            document.getElementById('key').placeholder = 'No key available';
+          document.getElementById("status").innerText = "❌ Lỗi khi ghi key lên server!";
         }
+      } catch (e) {
+        document.getElementById("status").innerText = "❌ Lỗi: " + e;
+      }
+    }
 
-        // Hàm copy key
-        function copyKey() {
-            const keyInput = document.getElementById('key');
-            if (keyInput.value.trim() !== '') {
-                keyInput.select();
-                document.execCommand('copy');
-                alert('Key copied to clipboard!');
-            } else {
-                alert('No key to copy!');
-            }
-        }
-    </script>
+    generateKey();
+  </script>
 </body>
 </html>
